@@ -1,0 +1,101 @@
+import {createServer} from 'node:http';
+import {readFile} from 'node:fs/promises';
+import {chromium} from '@playwright/test';
+import assert from 'node:assert/strict';
+const browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox']});
+const context=await browser.newContext({viewport:{width:1440,height:1100},reducedMotion:'reduce'});
+const page=await context.newPage();
+const errors=[];page.on('pageerror',e=>errors.push(e.message));
+const standalone = process.argv.includes('--html') || process.argv.includes('--site');
+let htmlServer;
+let target = 'http://127.0.0.1:3000';
+if (standalone) {
+ const html = await readFile(new URL(process.argv.includes('--site') ? '../site/index.html' : '../busafe.html', import.meta.url));
+ htmlServer = createServer((req,res)=>{res.writeHead(200,{'Content-Type':'text/html; charset=utf-8'});res.end(html)});
+ await new Promise(resolve=>htmlServer.listen(0,'127.0.0.1',resolve));
+ target = `http://127.0.0.1:${htmlServer.address().port}`;
+ await context.route(/^https?:/, route => route.request().url().startsWith(target + '/') ? route.continue() : route.abort());
+}
+await page.goto(target);
+await page.getByRole('heading',{name:'오늘도 안전하게.'}).waitFor();
+await page.screenshot({path:'/tmp/busafe-desktop.png',fullPage:true});
+await page.setViewportSize({width:375,height:812});
+await page.waitForTimeout(300);
+await page.screenshot({path:'/tmp/busafe-mobile.png',fullPage:true});
+assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,'mobile horizontal overflow');
+async function inspect(status){
+ await page.getByRole('button',{name:'점검 시작하기',exact:true}).click();
+ const dialog=page.getByRole('dialog');
+ assert.equal(await dialog.getByText(/QR|큐알/).count(),0);
+ await dialog.getByRole('button',{name:/뒷문 옆/}).click();
+ await dialog.getByRole('button',{name:'압력 확인하기'}).click();
+ await dialog.locator(`.pressure-option.${status}`).click();
+ await dialog.getByRole('button',{name:'다음 단계'}).click();
+ if(status==='normal') {
+  await dialog.locator('input[type=file]').setInputFiles({name:'gauge.svg',mimeType:'image/svg+xml',buffer:Buffer.from('<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><rect width="100" height="100" fill="#7FC9A4"/></svg>')});
+  await dialog.getByAltText('첨부된 압력계 사진').waitFor();
+ }
+ await dialog.locator('.check-card').nth(2).waitFor();
+ for(const segment of await dialog.locator('.segmented').all())await segment.getByRole('button',{name:'정상',exact:true}).click();
+ await dialog.getByRole('button',{name:'최종 확인',exact:true}).click();
+ if(status==='normal'){
+  await page.evaluate(()=>{window.__originalSetItem=Storage.prototype.setItem;Storage.prototype.setItem=()=>{throw new DOMException('Test quota exceeded','QuotaExceededError')}});
+  await dialog.getByRole('button',{name:'점검 결과 저장',exact:true}).click();
+  await dialog.getByRole('button',{name:'다시 저장하기'}).waitFor();
+  await page.evaluate(()=>{Storage.prototype.setItem=window.__originalSetItem});
+  await dialog.getByRole('button',{name:'다시 저장하기'}).click();
+ } else await dialog.getByRole('button',{name:'점검 결과 저장',exact:true}).click();
+ await dialog.getByRole('heading',{name:status==='normal'?'점검이 완료되었어요!':'관리자 확인이 필요해요.'}).waitFor();
+ if(status!=='normal'){
+  const contacts=dialog.getByRole('region',{name:'관련 기관 연결'});
+  assert.equal(await contacts.getByRole('link',{name:/소방청 · 소방서 안내/}).getAttribute('href'),'https://www.nfa.go.kr/nfa/');
+  assert.equal(await contacts.getByRole('link',{name:/119 전화 연결/}).count(),0);
+  await contacts.getByRole('button',{name:'화재·연기 등 긴급 상황인가요?'}).click();
+  assert.equal(await contacts.getByRole('link',{name:/119 전화 연결/}).getAttribute('href'),'tel:119');
+  await dialog.getByRole('button',{name:'관리자 보고 내용 저장'}).click();
+  await dialog.getByText('보고 내용이 저장되었습니다.',{exact:true}).waitFor();
+ }
+ await dialog.getByRole('button',{name:'홈으로 돌아가기'}).click();
+}
+await inspect('normal');
+await inspect('issue');
+await inspect('unknown');
+await page.reload();
+await page.getByRole('heading',{name:'오늘도 안전하게.'}).waitFor();
+const stored=await page.evaluate(()=>JSON.parse(localStorage.getItem('busafe.records.v1')));
+assert.equal(stored.filter(r=>!r.demo).length,3);
+assert.equal(stored[0].status,'unknown');assert.equal(stored[1].status,'issue');assert.equal(stored[2].status,'normal');assert.ok(stored[2].photo.startsWith('data:image/jpeg'));assert.ok(stored[0].reported);
+await page.locator('.mobile-nav').getByRole('button',{name:'점검 기록'}).click();
+await page.getByRole('heading',{name:'점검 기록',exact:true}).waitFor();
+await page.getByPlaceholder('차량번호 또는 소화기 번호 검색').fill('없는차량');
+await page.getByText('일치하는 기록이 없어요.').waitFor();
+await page.getByPlaceholder('차량번호 또는 소화기 번호 검색').fill('1234');
+await page.locator('.filters').getByRole('button',{name:'정상',exact:true}).click();
+await page.locator('.record-row').first().click();
+await page.getByAltText('저장된 소화기 압력계 사진').waitFor();
+await page.getByRole('button',{name:'닫기',exact:true}).click();
+const downloadPromise=page.waitForEvent('download');await page.getByRole('button',{name:'CSV 다운로드'}).click();assert.ok((await downloadPromise).suggestedFilename().endsWith('.csv'));
+await page.locator('.mobile-nav').getByRole('button',{name:'관리자',exact:true}).click();
+await page.getByRole('heading',{name:'우리의 안전, 한눈에.'}).waitFor();
+await page.setViewportSize({width:1440,height:1100});
+await page.screenshot({path:'/tmp/busafe-admin.png',fullPage:true});
+await page.locator('.issue-heading + .record-list .record-row').first().click();
+await page.getByRole('button',{name:'정비·교체 완료 처리'}).click();
+await page.getByRole('heading',{name:'정비·교체 처리가 완료되었어요.'}).waitFor();
+await page.getByRole('button',{name:'닫기',exact:true}).click();
+await page.locator('.sidebar').getByRole('button',{name:'내 정보',exact:true}).click();
+await page.getByLabel('기관명').fill('테스트 안전관리기관');
+await page.getByLabel('연락처').fill('02-0000-0000');
+await page.getByRole('button',{name:'변경사항 저장'}).click();
+await page.locator('.sidebar').getByRole('button',{name:'점검 기록',exact:true}).click();
+await page.locator('.filters').getByRole('button',{name:'이상',exact:true}).click();
+await page.locator('.record-row').first().click();
+assert.equal(await page.getByRole('link',{name:/테스트 안전관리기관/}).getAttribute('href'),'tel:0200000000');
+await page.screenshot({path:'/tmp/busafe-agency-desktop.png',fullPage:true});
+await page.setViewportSize({width:375,height:812});
+await page.screenshot({path:'/tmp/busafe-agency-mobile.png',fullPage:true});
+assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,'agency mobile overflow');
+assert.equal(errors.length,0,errors.join('\n'));
+console.log('PASS: 375px layout, direct extinguisher selection without QR, agency links, emergency contact, all three outcomes, photo persistence, reload, search/filter, detail, CSV download, admin resolution; no browser runtime errors.');
+await browser.close();
+if(htmlServer) await new Promise(resolve=>htmlServer.close(resolve));
