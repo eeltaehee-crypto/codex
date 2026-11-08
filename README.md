@@ -20,7 +20,7 @@ HTTPS 사이트에서도 기록은 각 휴대폰의 해당 사이트 주소에 �
 
 ## 단일 HTML 버전
 
-**`busafe.html` 파일을 브라우저로 열면 바로 실행됩니다.** Node.js 설치나 Next.js 서버 실행은 필요하지 않습니다. CSS, 앱 JavaScript, 아이콘 및 일러스트가 파일에 포함되어 있습니다. Pretendard 웹폰트만 인터넷 연결 시 로드하며, 오프라인에서는 시스템 글꼴로 모든 기능을 사용할 수 있습니다.
+**`busafe.html` 파일을 브라우저로 열면 바로 실행됩니다.** Node.js 설치나 Next.js 서버 실행은 필요하지 않습니다. CSS, 앱 JavaScript, 아이콘 및 제품 이미지가 파일에 포함되어 있습니다. Pretendard 웹폰트만 인터넷 연결 시 로드하며, 오프라인에서는 시스템 글꼴로 모든 기능을 사용할 수 있습니다.
 
 홈, 단계별 점검, 사진 첨부, 점검 기록, 관리자 현황 및 CSV 다운로드를 포함합니다. 점검 기록은 현재 파일/브라우저의 로컬 저장소에 저장됩니다. 파일 주소와 서버 주소의 저장소는 서로 다르며, 파일 위치를 바꾸거나 다른 브라우저로 열면 이전 기록이 보이지 않을 수 있습니다. 브라우저에서 로컬 파일의 저장소 접근을 제한하면 오류 안내가 표시됩니다.
 
@@ -79,7 +79,7 @@ npm test
 
 ## 디자인
 
-Pretendard, 코랄·연한 핑크·소프트 그린, 둥근 카드, SVG 버스/압력계 일러스트를 사용합니다. Pretendard는 jsDelivr에서 로드하며 오프라인에서는 시스템 글꼴을 사용합니다. 주요 공통 컴포넌트는 `components/busafe.tsx`, 일러스트는 `components/illustrations.tsx`, 디자인 토큰·반응형 스타일은 `app/globals.css`에 있습니다. reduced-motion 설정을 지원합니다.
+Pretendard, 코랄 핑크, 큰 제품 사진, 24~32px 둥근 카드와 모바일 캡슐 메뉴를 사용합니다. 홈 및 소화기 선택 화면은 사진 중심이며 압력 판단 화면은 이해를 돕는 SVG 압력계 예시를 유지합니다. Pretendard는 jsDelivr에서 로드하며 오프라인에서는 시스템 글꼴을 사용합니다. 주요 공통 컴포넌트는 `components/busafe.tsx`, 일러스트는 `components/illustrations.tsx`, 기본 디자인 토큰은 `app/globals.css`, 사진 중심의 반응형 테마는 `app/photo-theme.css`에 있습니다. 제품 이미지는 이 프로젝트를 위해 생성한 연출 이미지이며 실제 차량·소화기의 기록 사진이 아닙니다. 원본 WebP 자산은 `public/images`, 경로 정의는 `lib/visuals.ts`에 있습니다. 단일 HTML 빌드에서는 이미지도 data URI로 포함하므로 외부 이미지 서버 없이 표시됩니다. 실제 첨부 사진이 있는 점검 기록은 해당 사진을 썸네일로 표시합니다. reduced-motion 설정을 지원합니다.
 
 ## 브라우저 검증
 

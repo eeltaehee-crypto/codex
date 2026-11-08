@@ -18,6 +18,8 @@ if (standalone) {
 }
 await page.goto(target);
 await page.getByRole('heading',{name:'오늘도 안전하게.'}).waitFor();
+await page.locator('.editorial-image').evaluate(img=>img.decode());
+assert.equal(await page.locator('.equipment-card').count(),2);
 await page.screenshot({path:'/tmp/busafe-desktop.png',fullPage:true});
 await page.setViewportSize({width:375,height:812});
 await page.waitForTimeout(300);

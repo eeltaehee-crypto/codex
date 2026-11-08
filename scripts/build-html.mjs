@@ -23,10 +23,17 @@ const result = await build({
   minify: true,
   define: { 'process.env.NODE_ENV': '"production"' },
   tsconfig: path.join(root, 'tsconfig.json'),
+  plugins: [{ name: 'inline-editorial-photos', setup(build) {
+    build.onLoad({ filter: /lib[\\/]visuals\.ts$/ }, async () => {
+      const studio = (await readFile(path.join(root, 'public/images/extinguisher-studio.webp'))).toString('base64');
+      const bus = (await readFile(path.join(root, 'public/images/extinguisher-bus.webp'))).toString('base64');
+      return { contents: `export const studioPhoto = 'data:image/webp;base64,${studio}'; export const busPhoto = 'data:image/webp;base64,${bus}';`, loader: 'js' };
+    });
+  }}],
 });
 // The app uses its own CSS classes; only Tailwind's reset is needed here.
 const source = (await readFile(path.join(root, 'app/globals.css'), 'utf8'))
-  .replace('@import "tailwindcss";', '@import "tailwindcss" source(none);');
+  .replace('@import "tailwindcss";', '@import "tailwindcss" source(none);') + '\n' + await readFile(path.join(root, 'app/photo-theme.css'), 'utf8');
 const stylesheet = await postcss([tailwind({ base: root, optimize: true })])
   .process(source, { from: path.join(root, 'app/globals.css') });
 const html = `<!doctype html>
