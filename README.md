@@ -4,7 +4,20 @@
 
 공개 HTTPS 주소를 만들려면 정적 호스팅에 게시해야 합니다. `site/index.html`은 바로 게시할 수 있는 사이트 첫 화면이며 별도의 앱 서버가 필요하지 않습니다.
 
-### 가장 간단한 방법 — Netlify Drop
+### GitHub Pages — 파일 다운로드 없이 게시
+
+`docs/index.html`에 최신 사이트를 배치했습니다. 저장소에 `docs/.nojekyll`도 포함되어 있어 별도의 변환 없이 게시합니다.
+
+1. https://github.com/eeltaehee-crypto/codex/settings/pages 를 엽니다.
+2. **Build and deployment → Source**에서 **Deploy from a branch**를 선택합니다.
+3. **Branch**는 **main**, 폴더는 **/docs**를 선택한 뒤 **Save**를 누릅니다.
+4. 배포 완료 후 같은 화면에 나타나는 **Visit site**로 접속합니다. 해당 HTTPS 주소를 휴대폰에서도 열 수 있습니다.
+
+공개 설정은 저장소 관리자 권한이 필요합니다. 소스 업로드만으로 사이트가 활성화되지는 않습니다. 사이트 파일과 이미지·스크립트가 모두 준비된 상태이며, 게시 설정 및 공개 주소는 GitHub의 배포 결과로 확인합니다.
+
+소스를 변경한 뒤 `npm run build:site`를 실행하면 `site/`와 `docs/`를 함께 갱신합니다. `npm run test:pages`는 실제 게시 파일을 `/codex/` 경로로 제공하여 모바일 점검·기록·기관 연결 흐름을 검증합니다.
+
+### Netlify Drop으로 게시
 
 1. `busafe-site.zip`을 내려받습니다. 업로드 화면에서 폴더를 요구하면 압축을 풀어 `index.html`이 들어 있는 폴더를 선택합니다.
 2. https://app.netlify.com/drop 에 Netlify 계정으로 로그인한 후 ZIP 파일 또는 해당 폴더를 업로드합니다.

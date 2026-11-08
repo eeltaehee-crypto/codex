@@ -12,7 +12,8 @@
     "build:html": "node scripts/build-html.mjs",
     "test:html": "node scripts/browser-check.mjs --html",
     "build:site": "node scripts/build-site.mjs",
-    "test:site": "node scripts/browser-check.mjs --site"
+    "test:site": "node scripts/browser-check.mjs --site",
+    "test:pages": "node scripts/browser-check.mjs --pages"
   },
   "dependencies": {
     "lucide-react": "^0.468.0",

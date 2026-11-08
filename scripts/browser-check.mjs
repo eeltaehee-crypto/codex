@@ -6,17 +6,17 @@ const browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'
 const context=await browser.newContext({viewport:{width:1440,height:1100},reducedMotion:'reduce'});
 const page=await context.newPage();
 const errors=[];page.on('pageerror',e=>errors.push(e.message));
-const standalone = process.argv.includes('--html') || process.argv.includes('--site');
+const standalone = process.argv.includes('--html') || process.argv.includes('--site') || process.argv.includes('--pages');
 let htmlServer;
 let target = 'http://127.0.0.1:3000';
 if (standalone) {
- const html = await readFile(new URL(process.argv.includes('--site') ? '../site/index.html' : '../busafe.html', import.meta.url));
+ const html = await readFile(new URL(process.argv.includes('--pages') ? '../docs/index.html' : process.argv.includes('--site') ? '../site/index.html' : '../busafe.html', import.meta.url));
  htmlServer = createServer((req,res)=>{res.writeHead(200,{'Content-Type':'text/html; charset=utf-8'});res.end(html)});
  await new Promise(resolve=>htmlServer.listen(0,'127.0.0.1',resolve));
  target = `http://127.0.0.1:${htmlServer.address().port}`;
  await context.route(/^https?:/, route => route.request().url().startsWith(target + '/') ? route.continue() : route.abort());
 }
-await page.goto(target);
+await page.goto(process.argv.includes('--pages') ? `${target}/codex/` : target);
 await page.getByRole('heading',{name:'오늘도 안전하게.'}).waitFor();
 await page.locator('.editorial-image').evaluate(img=>img.decode());
 assert.equal(await page.locator('.equipment-card').count(),2);

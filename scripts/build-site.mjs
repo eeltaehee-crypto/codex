@@ -11,4 +11,8 @@ await writeFile(path.join(publish, '_headers'), `/*
   Referrer-Policy: strict-origin-when-cross-origin
   Cache-Control: no-cache
 `);
-console.log('Ready to publish: site/ (index.html + hosting headers)');
+const pages = path.join(root, 'docs');
+await mkdir(pages, { recursive: true });
+await copyFile(path.join(root, 'busafe.html'), path.join(pages, 'index.html'));
+await writeFile(path.join(pages, '.nojekyll'), '');
+console.log('Ready to publish: site/ for static hosting, docs/ for GitHub Pages');
