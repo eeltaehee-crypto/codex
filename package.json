@@ -13,7 +13,8 @@
     "test:html": "node scripts/browser-check.mjs --html",
     "build:site": "node scripts/build-site.mjs",
     "test:site": "node scripts/browser-check.mjs --site",
-    "test:pages": "node scripts/browser-check.mjs --pages"
+    "test:pages": "node scripts/browser-check.mjs --pages",
+    "build:offline": "npm run build:html && python3 scripts/package-offline.py"
   },
   "dependencies": {
     "lucide-react": "^0.468.0",
